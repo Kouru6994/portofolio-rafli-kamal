@@ -29,9 +29,11 @@ if (cur && window.matchMedia('(pointer: fine)').matches) {
 
 /* NAV ON SCROLL */
 const navBar = document.getElementById('nav');
-window.addEventListener('scroll', () => {
-  navBar.classList.toggle('scrolled', window.scrollY > 40);
-}, { passive: true });
+if (navBar) {
+  window.addEventListener('scroll', () => {
+    navBar.classList.toggle('scrolled', window.scrollY > 40);
+  }, { passive: true });
+}
 
 /* MOBILE DRAWER */
 const burger   = document.getElementById('nav-burger');
@@ -45,6 +47,7 @@ function goToSection(href) {
 }
 
 function openDrawer() {
+  if (!drawer || !overlay || !burger) return;
   drawer.classList.add('is-open');
   overlay.classList.add('is-open');
   document.body.style.overflow = 'hidden';
@@ -53,6 +56,7 @@ function openDrawer() {
 }
 
 function closeDrawer() {
+  if (!drawer || !overlay || !burger) return;
   drawer.classList.remove('is-open');
   overlay.classList.remove('is-open');
   document.body.style.overflow = '';
@@ -112,42 +116,32 @@ const form      = document.getElementById('ct-form');
 const submitBtn = document.getElementById('cf-submit');
 const statusEl  = document.getElementById('cf-status');
 
-function validateForm() {
-  const name  = document.getElementById('cf-name').value.trim();
-  const email = document.getElementById('cf-email').value.trim();
-  const msg   = document.getElementById('cf-msg').value.trim();
-  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (!name) return 'Nama wajib diisi.';
-  if (!email) return 'Email wajib diisi.';
-  if (!emailRe.test(email)) return 'Format email tidak valid.';
-  if (!msg) return 'Pesan tidak boleh kosong.';
-  return null;
-}
-
-function setStatus(msg, type = '') {
-  statusEl.textContent = msg;
-  statusEl.className   = 'cf-status' + (type ? ' ' + type : '');
-}
-
 if (form) {
   form.addEventListener('submit', async e => {
     e.preventDefault();
 
-    const err = validateForm();
-    if (err) { setStatus(err, 'err'); return; }
+    const name  = document.getElementById('cf-name')?.value.trim();
+    const email = document.getElementById('cf-email')?.value.trim();
+    const msg   = document.getElementById('cf-msg')?.value.trim();
 
-    submitBtn.disabled    = true;
-    submitBtn.textContent = 'Mengirim…';
-    setStatus('');
+    if (!name || !email || !msg) {
+      if (statusEl) {
+        statusEl.textContent = 'Nama, email, dan pesan wajib diisi.';
+        statusEl.className = 'cf-status err';
+      }
+      return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled    = true;
+      submitBtn.textContent = 'Mengirim…';
+    }
 
     const payload = {
-      name:    document.getElementById('cf-name').value.trim(),
-      email:   document.getElementById('cf-email').value.trim(),
-      subject: document.getElementById('cf-subject').value.trim() || '(Tanpa Subjek)',
-      message: document.getElementById('cf-msg').value.trim(),
-      sentAt:  new Date().toISOString(),
-      delayHours: 10
+      name,
+      email,
+      subject: document.getElementById('cf-subject')?.value.trim() || '(Tanpa Subjek)',
+      message: msg
     };
 
     try {
@@ -160,15 +154,21 @@ if (form) {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || 'Terjadi kesalahan sistem.');
 
-      setStatus('Pesan berhasil terkirim! Saya akan merespons segera.', 'ok');
+      if (statusEl) {
+        statusEl.textContent = 'Pesan berhasil terkirim! Saya akan merespons segera.';
+        statusEl.className = 'cf-status ok';
+      }
       form.reset();
     } catch (fetchErr) {
-      console.warn('[Contact Form] Fetch error/demo mode:', fetchErr.message);
-      setStatus('Pesan diterima! (Mode Demo API)', 'ok');
-      form.reset();
+      if (statusEl) {
+        statusEl.textContent = fetchErr.message || 'Gagal mengirim pesan.';
+        statusEl.className = 'cf-status err';
+      }
     } finally {
-      submitBtn.disabled    = false;
-      submitBtn.textContent = 'Kirim Pesan →';
+      if (submitBtn) {
+        submitBtn.disabled    = false;
+        submitBtn.textContent = 'Kirim Pesan →';
+      }
     }
   });
 }
