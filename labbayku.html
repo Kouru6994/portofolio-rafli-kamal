@@ -93,23 +93,27 @@
         </div>
 
         <div class="ct-right reveal">
-          <form class="ct-form" id="ct-form" novalidate>
+          <form class="ct-form" id="ct-form" action="https://api.web3forms.com/submit" method="POST" novalidate>
+            <input type="hidden" name="access_key" value="7940ccb0-9780-4672-9deb-9548a2070bef" />
+            <input type="hidden" name="from_name" value="Portfolio Rafli Kamal" />
+            <input type="checkbox" name="botcheck" id="cf-botcheck" style="display: none;" />
+
             <div class="cf-group">
               <label class="cf-label mono" for="cf-name">NAMA</label>
-              <input class="cf-input" id="cf-name" type="text" placeholder="Nama Anda" required autocomplete="name" />
+              <input class="cf-input" id="cf-name" name="name" type="text" placeholder="Nama Anda" required autocomplete="name" />
             </div>
             <div class="cf-group">
               <label class="cf-label mono" for="cf-email">EMAIL</label>
-              <input class="cf-input" id="cf-email" type="email" placeholder="email@anda.com" required
+              <input class="cf-input" id="cf-email" name="email" type="email" placeholder="email@anda.com" required
                 autocomplete="email" />
             </div>
             <div class="cf-group">
               <label class="cf-label mono" for="cf-subject">SUBJEK</label>
-              <input class="cf-input" id="cf-subject" type="text" placeholder="Proyek / Kerjasama" />
+              <input class="cf-input" id="cf-subject" name="subject" type="text" placeholder="Proyek / Kerjasama" />
             </div>
             <div class="cf-group">
               <label class="cf-label mono" for="cf-msg">PESAN</label>
-              <textarea class="cf-input" id="cf-msg" rows="5" placeholder="Tuliskan detail proyek Anda..."
+              <textarea class="cf-input" id="cf-msg" name="message" rows="5" placeholder="Tuliskan detail proyek Anda..."
                 required></textarea>
             </div>
             <button type="submit" class="cf-submit" id="cf-submit">

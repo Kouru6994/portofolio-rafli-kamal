@@ -111,7 +111,7 @@ document.querySelectorAll('.work-row').forEach((row, i) => {
   rowObs.observe(row);
 });
 
-/* CONTACT FORM HANDLER */
+/* CONTACT FORM HANDLER (Web3Forms Integration) */
 const form      = document.getElementById('ct-form');
 const submitBtn = document.getElementById('cf-submit');
 const statusEl  = document.getElementById('cf-status');
@@ -120,48 +120,108 @@ if (form) {
   form.addEventListener('submit', async e => {
     e.preventDefault();
 
-    const name  = document.getElementById('cf-name')?.value.trim();
-    const email = document.getElementById('cf-email')?.value.trim();
-    const msg   = document.getElementById('cf-msg')?.value.trim();
+    const nameInput  = document.getElementById('cf-name') || form.querySelector('input[name="name"]');
+    const emailInput = document.getElementById('cf-email') || form.querySelector('input[name="email"]');
+    const subjInput  = document.getElementById('cf-subject') || form.querySelector('input[name="subject"]');
+    const msgInput   = document.getElementById('cf-msg') || form.querySelector('textarea[name="message"]');
+    const botcheck   = form.querySelector('input[name="botcheck"]');
 
-    if (!name || !email || !msg) {
-      if (statusEl) {
-        statusEl.textContent = 'Nama, email, dan pesan wajib diisi.';
-        statusEl.className = 'cf-status err';
-      }
+    const name  = nameInput ? nameInput.value.trim() : '';
+    const email = emailInput ? emailInput.value.trim() : '';
+    const subj  = subjInput ? subjInput.value.trim() : '';
+    const msg   = msgInput ? msgInput.value.trim() : '';
+
+    // Anti-spam honeypot check
+    if (botcheck && botcheck.checked) {
       return;
     }
 
+    // Validasi input
+    if (!name) {
+      if (statusEl) {
+        statusEl.textContent = 'Nama wajib diisi.';
+        statusEl.className = 'cf-status err';
+      }
+      nameInput?.focus();
+      return;
+    }
+
+    if (!email) {
+      if (statusEl) {
+        statusEl.textContent = 'Email wajib diisi.';
+        statusEl.className = 'cf-status err';
+      }
+      emailInput?.focus();
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      if (statusEl) {
+        statusEl.textContent = 'Format email tidak valid. Pastikan format seperti nama@domain.com.';
+        statusEl.className = 'cf-status err';
+      }
+      emailInput?.focus();
+      return;
+    }
+
+    if (!msg) {
+      if (statusEl) {
+        statusEl.textContent = 'Pesan tidak boleh kosong.';
+        statusEl.className = 'cf-status err';
+      }
+      msgInput?.focus();
+      return;
+    }
+
+    // Set UI loading state
     if (submitBtn) {
       submitBtn.disabled    = true;
       submitBtn.textContent = 'Mengirim…';
     }
+    if (statusEl) {
+      statusEl.textContent = 'Sedang mengirim pesan Anda…';
+      statusEl.className = 'cf-status';
+    }
 
-    const payload = {
-      name,
-      email,
-      subject: document.getElementById('cf-subject')?.value.trim() || '(Tanpa Subjek)',
-      message: msg
-    };
+    const formData = new FormData(form);
+
+    // Pastikan access_key terisi
+    if (!formData.get('access_key')) {
+      formData.append('access_key', '7940ccb0-9780-4672-9deb-9548a2070bef');
+    }
+
+    // Atur subjek default jika tidak diisi pengguna
+    if (!subj) {
+      formData.set('subject', `[Portfolio Contact] Pesan Baru dari ${name}`);
+    }
 
     try {
-      const res = await fetch('/api/contact', {
+      const response = await fetch('https://api.web3Forms.com/submit'.toLowerCase(), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: {
+          'Accept': 'application/json'
+        },
+        body: formData,
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Terjadi kesalahan sistem.');
+      const result = await response.json().catch(() => null);
 
-      if (statusEl) {
-        statusEl.textContent = 'Pesan berhasil terkirim! Saya akan merespons segera.';
-        statusEl.className = 'cf-status ok';
+      if (response.ok && result && result.success) {
+        if (statusEl) {
+          statusEl.textContent = 'Pesan berhasil terkirim! Terima kasih telah menghubungi saya, saya akan segera merespons.';
+          statusEl.className = 'cf-status ok';
+        }
+        form.reset();
+      } else {
+        const errorMsg = (result && result.message)
+          ? result.message
+          : 'Terjadi kendala saat mengirim pesan. Silakan coba kembali.';
+        throw new Error(errorMsg);
       }
-      form.reset();
-    } catch (fetchErr) {
+    } catch (err) {
       if (statusEl) {
-        statusEl.textContent = fetchErr.message || 'Gagal mengirim pesan.';
+        statusEl.textContent = err.message || 'Gagal mengirim pesan. Silakan periksa koneksi internet Anda atau coba lagi nanti.';
         statusEl.className = 'cf-status err';
       }
     } finally {

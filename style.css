@@ -84,6 +84,11 @@ strong {
   color: #dc2626;
 }
 
+.avail {
+  color: #16a34a;
+  font-weight: 500;
+}
+
 ::-webkit-scrollbar {
   width: 3px;
 }
